@@ -9,6 +9,8 @@ from email.mime.multipart import MIMEMultipart
 import subprocess
 import os
 import requests
+import datetime
+from config import EMAIL_CONFIG, USER_CONFIG
 
 def send_email_notification(subject, body, to_email="jobkimani@gmail.com"):
     """
@@ -17,7 +19,6 @@ def send_email_notification(subject, body, to_email="jobkimani@gmail.com"):
     """
     try:
         # Email configuration - you'll need to set these in config.py
-        from config import EMAIL_CONFIG
         sender_email = EMAIL_CONFIG.get('sender_email')
         sender_password = EMAIL_CONFIG.get('sender_password')
         
@@ -67,6 +68,56 @@ def send_desktop_notification(title, message):
         print(f"❌ Failed to send desktop notification: {e}")
         return False
 
+def get_deadline_and_chip_tips():
+    fpl_id = USER_CONFIG.get("fpl_id")
+    if not fpl_id or fpl_id == "your_fpl_id_here":
+        return ("❗ Add your FPL ID to config.py for personalized chip/wildcard tips.\n", "❗ Add your FPL ID to config.py for deadline countdown.\n")
+    try:
+        # Get current gameweek info
+        bootstrap = requests.get("https://fantasy.premierleague.com/api/bootstrap-static/").json()
+        events = bootstrap["events"]
+        now = datetime.datetime.utcnow()
+        current_gw = next((e for e in events if e["is_current"]), None)
+        next_gw = next((e for e in events if e["is_next"]), None)
+        deadline = None
+        if next_gw:
+            deadline = datetime.datetime.strptime(next_gw["deadline_time"][:19], "%Y-%m-%dT%H:%M:%S")
+        elif current_gw:
+            deadline = datetime.datetime.strptime(current_gw["deadline_time"][:19], "%Y-%m-%dT%H:%M:%S")
+        # Deadline countdown
+        if deadline:
+            delta = deadline - now
+            days, seconds = delta.days, delta.seconds
+            hours = seconds // 3600
+            minutes = (seconds % 3600) // 60
+            deadline_str = f"⏰ Next Deadline: GW{next_gw['id'] if next_gw else current_gw['id']} - {deadline.strftime('%Y-%m-%d %H:%M UTC')}\n  (in {days}d {hours}h {minutes}m)\n"
+        else:
+            deadline_str = "⏰ Could not fetch next deadline.\n"
+        # Get chip usage
+        entry = requests.get(f"https://fantasy.premierleague.com/api/entry/{fpl_id}/").json()
+        chips = entry.get("chips", [])
+        chips_used = {c["name"] for c in chips}
+        available_chips = {"wildcard", "3xc", "bboost", "freehit"} - chips_used
+        # Dynamic chip/wildcard tips
+        tips = []
+        if "wildcard" in available_chips:
+            if next_gw and int(next_gw["id"]) > 8:
+                tips.append("💡 Wildcard still available! Consider using it soon if your team needs a reset.")
+            else:
+                tips.append("💡 Wildcard available. Early use can help catch price rises and fixture swings.")
+        if "freehit" in available_chips:
+            tips.append("💡 Free Hit chip is unused. Save it for blank or double gameweeks.")
+        if "bboost" in available_chips:
+            tips.append("💡 Bench Boost chip is unused. Plan for a double gameweek with strong bench.")
+        if "3xc" in available_chips:
+            tips.append("💡 Triple Captain chip is unused. Save it for a double gameweek or a top fixture.")
+        if not tips:
+            tips.append("✅ All chips used or scheduled. Focus on transfers and captaincy!")
+        chip_str = "\n".join(tips) + "\n"
+        return chip_str, deadline_str
+    except Exception as e:
+        return (f"❌ Failed to fetch chip/deadline info: {e}\n", "")
+
 def get_weekly_report_text():
     """
     Generate a comprehensive weekly FPL report as text.
@@ -78,6 +129,11 @@ def get_weekly_report_text():
         
         report = "📊 FPL Weekly Report\n"
         report += "=" * 50 + "\n\n"
+        
+        # Add deadline countdown and chip tips
+        chip_tips, deadline_str = get_deadline_and_chip_tips()
+        report += deadline_str + "\n"
+        report += chip_tips + "\n"
         
         # Team tips
         top_players = sorted(players, key=lambda x: -x['form'])[:5]
