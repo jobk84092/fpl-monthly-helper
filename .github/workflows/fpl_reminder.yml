@@ -21,7 +21,9 @@ jobs:
           pip install -r fpl-monthly-helper/requirements.txt
       - name: Set up email credentials
         run: |
-          echo "EMAIL_CONFIG = {\"sender_email\": \"$EMAIL_ADDRESS\", \"sender_password\": \"$EMAIL_PASSWORD\"}" > fpl-monthly-helper/config.py
+          cp fpl-monthly-helper/config_template.py fpl-monthly-helper/config.py
+          sed -i 's/your_gmail@gmail.com/'"$EMAIL_ADDRESS"'/g' fpl-monthly-helper/config.py
+          sed -i 's/your_app_password/'"$EMAIL_PASSWORD"'/g' fpl-monthly-helper/config.py
         env:
           EMAIL_ADDRESS: ${{ secrets.EMAIL_ADDRESS }}
           EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
