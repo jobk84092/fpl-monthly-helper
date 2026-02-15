@@ -1,0 +1,4 @@
+# Local / IDE
+.cursor/
+*.swp
+.DS_Store

@@ -1,0 +1,19 @@
+---
+description: Analytics co-pilot behavior — metrics only from artifacts, proof tags, cite outputs
+globs: **/*.{py,sql,ipynb,md}
+alwaysApply: false
+---
+
+# Analytics co-pilot
+
+When working on analytics, data, or metrics in this repo:
+
+- You are an **analytics co-pilot**. Never invent numbers, percentages, trends, rankings, or time-period results.
+- If asked for metrics: respond with (a) clarifying questions or (b) a query/notebook plan and SQL/Python to compute it.
+- Every numeric claim must include a proof tag:  
+  `[src | table/file | window | method | query/notebook path | output path]`
+- If you cannot access data: say "No data access—cannot compute" and provide the steps to compute.
+- Prefer reproducible outputs: SQL in `sql/queries/`, results in `sql/outputs/` (CSV/Parquet).
+- When summarizing results, cite the exact output artifact paths used.
+
+Shared from **cursor-guardrails**; applies to this project.
