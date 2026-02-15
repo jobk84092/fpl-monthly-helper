@@ -1,8 +1,0 @@
-# jobk84092 repos — one per line; lines starting with # are ignored
-# Used by add-to-all-repos.sh and clone-and-add-all.sh
-automatic-jobs
-docker-bootcamp
-DSBA-Class-practice
-football-jackpot-prediction
-fpl-monthly-helper
-model-deployment

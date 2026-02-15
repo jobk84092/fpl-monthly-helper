@@ -1,0 +1,3 @@
+[submodule ".cursor-guardrails"]
+	path = .cursor-guardrails
+	url = https://github.com/jobk84092/cursor-guardrails.git
